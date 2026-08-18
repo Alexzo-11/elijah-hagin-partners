@@ -35,18 +35,24 @@ export function Navbar({ transparent = false }) {
     `}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
-          {/* Logo */}
+          {/* Logo - Mobile: Only logo, no text */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="relative w-9 h-9 md:w-10 md:h-10 flex-shrink-0">
-  <Image
-    src="/images/logopng.png"
-    alt="Exousia Fellowship"
-    fill
-    sizes="(max-width: 768px) 36px, 40px"
-    className="object-contain group-hover:scale-105 transition-transform"
-    priority
-  />
-</div>s
+            <motion.div 
+              whileHover={{ rotate: -10, scale: 1.05 }}
+              className="relative w-9 h-9 md:w-10 md:h-10 flex-shrink-0"
+            >
+              <Image
+                src="/images/logopng.png"
+                alt="Exousia Fellowship"
+                fill
+                className="object-contain group-hover:scale-105 transition-transform"
+                priority
+              />
+            </motion.div>
+            <span className="font-bold text-lg tracking-tight text-[#4A4C4E] hidden sm:inline">
+              Exousia
+              <span className="text-[#E51913] font-normal"> Partners Inc.</span>
+            </span>
           </Link>
 
           {/* Desktop Nav */}
@@ -62,8 +68,8 @@ export function Navbar({ transparent = false }) {
             ))}
           </nav>
 
-          {/* Actions */}
-          <div className="flex items-center gap-3">
+          {/* Desktop Actions */}
+          <div className="hidden md:flex items-center gap-3">
             {user ? (
               <div className="relative">
                 <button
@@ -73,7 +79,7 @@ export function Navbar({ transparent = false }) {
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#E51913]/20 to-[#3BBCEB]/20 flex items-center justify-center text-[#E51913] font-semibold text-sm">
                     {user?.firstName?.[0]}{user?.lastName?.[0]}
                   </div>
-                  <span className="hidden sm:inline text-sm font-medium text-[#4A4C4E]">
+                  <span className="text-sm font-medium text-[#4A4C4E]">
                     {user?.firstName}
                   </span>
                 </button>
@@ -126,7 +132,7 @@ export function Navbar({ transparent = false }) {
               <>
                 <Link
                   href="/login"
-                  className="hidden sm:inline-flex text-sm font-medium text-[#4A4C4E]/70 hover:text-[#E51913] transition px-3 py-1.5 rounded-full hover:bg-white/50"
+                  className="text-sm font-medium text-[#4A4C4E]/70 hover:text-[#E51913] transition px-3 py-1.5 rounded-full hover:bg-white/50"
                 >
                   Log in
                 </Link>
@@ -138,17 +144,23 @@ export function Navbar({ transparent = false }) {
                 </Link>
               </>
             )}
+          </div>
+
+          {/* Mobile: Only Logo + Toggle Button */}
+          <div className="flex items-center gap-2 md:hidden">
+            {/* Mobile Toggle Button - Always visible on mobile */}
             <button
-              className="md:hidden p-2 hover:bg-white/50 rounded-lg transition"
+              className="p-2 hover:bg-white/50 rounded-lg transition"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label="Toggle menu"
             >
-              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {isMenuOpen ? <X className="w-6 h-6 text-[#4A4C4E]" /> : <Menu className="w-6 h-6 text-[#4A4C4E]" />}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu - Full featured dropdown */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
@@ -174,7 +186,7 @@ export function Navbar({ transparent = false }) {
                       </a>
                     );
                   })}
-                  <div className="border-t border-[#E5E6E7] pt-3 mt-2">
+                  <div className="border-t border-[#E5E6E7] pt-3 mt-2 space-y-2">
                     <Link
                       href="/login"
                       className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/50 hover:bg-white transition text-[#4A4C4E] hover:text-[#E51913]"
@@ -185,7 +197,7 @@ export function Navbar({ transparent = false }) {
                     </Link>
                     <Link
                       href="/register"
-                      className="flex items-center justify-center gap-3 px-4 py-3 mt-2 rounded-xl bg-gradient-to-r from-[#E51913] to-[#E51913]/80 text-white hover:opacity-90 transition"
+                      className="flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-[#E51913] to-[#E51913]/80 text-white hover:opacity-90 transition"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       <User className="w-5 h-5" />

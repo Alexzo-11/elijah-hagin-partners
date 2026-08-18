@@ -5,10 +5,9 @@ import Image from 'next/image';
 import { ArrowLeft, Cookie, CheckCircle, Shield, Eye, Settings, Globe } from 'lucide-react';
 
 export default function CookiesPage() {
-  // No auth checks - freely accessible
   return (
     <div className="min-h-screen bg-[#F5F6F7]">
-      {/* Same header */}
+      {/* Header - No auth required */}
       <header className="glass border-b border-[#8A8C8E]/10 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
@@ -31,18 +30,21 @@ export default function CookiesPage() {
             <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
               <Link href="/" className="text-[#4A4C4E]/70 hover:text-[#E51913] transition">Home</Link>
               <Link href="/learn-more" className="text-[#4A4C4E]/70 hover:text-[#E51913] transition">About</Link>
-              <Link href="/register" className="text-[#4A4C4E]/70 hover:text-[#E51913] transition">Become a Partner</Link>
             </nav>
 
             <div className="flex items-center gap-3">
-              <Link href="/login" className="hidden sm:inline-flex text-sm font-medium text-[#4A4C4E]/70 hover:text-[#E51913] transition px-3 py-1.5 rounded-full hover:bg-[#F5F6F7]">
+              <Link href="/login" className="text-sm font-medium text-[#4A4C4E]/70 hover:text-[#E51913] transition px-3 py-1.5 rounded-full hover:bg-[#F5F6F7]">
                 Log in
+              </Link>
+              <Link href="/register" className="btn-primary text-sm py-2 px-5 shadow-lg shadow-[#E51913]/25">
+                Become a Partner
               </Link>
             </div>
           </div>
         </div>
       </header>
 
+      {/* Content */}
       <section className="py-16 md:py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4 mb-8">
@@ -64,9 +66,8 @@ export default function CookiesPage() {
             </div>
 
             <div className="prose prose-lg max-w-none text-[#4A4C4E]">
-              {/* Full cookies policy content here */}
               <p className="text-lg">
-                This Cookies Policy explains how Exousia Fellowship Incorporated uses cookies and similar technologies...
+                This Cookies Policy explains how Exousia Fellowship Incorporated uses cookies and similar technologies to recognize you when you visit our website. It explains what these technologies are and why we use them, as well as your rights to control our use of them.
               </p>
 
               <h2 className="text-2xl font-bold text-[#4A4C4E] mt-8 flex items-center gap-2">

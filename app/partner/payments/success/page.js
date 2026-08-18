@@ -28,6 +28,7 @@ export default function PaymentSuccess() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const reference = searchParams.get('reference');
+  const trxref = searchParams.get('trxref');
   const demo = searchParams.get('demo') === 'true';
   
   const [loading, setLoading] = useState(true);
@@ -36,7 +37,10 @@ export default function PaymentSuccess() {
   const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
-    if (!reference) {
+    // Use either reference or trxref
+    const ref = reference || trxref;
+    
+    if (!ref) {
       router.push('/partner');
       return;
     }
@@ -46,7 +50,7 @@ export default function PaymentSuccess() {
         const res = await fetch('/api/payments/verify', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ reference }),
+          body: JSON.stringify({ reference: ref }),
         });
 
         const data = await res.json();
@@ -64,7 +68,7 @@ export default function PaymentSuccess() {
     };
 
     verifyPayment();
-  }, [reference, router]);
+  }, [reference, trxref, router]);
 
   const handleViewReceipt = () => {
     if (payment && payment.id) {

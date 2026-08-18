@@ -5,10 +5,9 @@ import Image from 'next/image';
 import { ArrowLeft, FileText, CheckCircle, Users, Shield, CreditCard, Mail, Clock } from 'lucide-react';
 
 export default function TermsOfService() {
-  // No auth checks - freely accessible
   return (
     <div className="min-h-screen bg-[#F5F6F7]">
-      {/* Same header as privacy policy */}
+      {/* Header - No auth required */}
       <header className="glass border-b border-[#8A8C8E]/10 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
@@ -31,18 +30,21 @@ export default function TermsOfService() {
             <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
               <Link href="/" className="text-[#4A4C4E]/70 hover:text-[#E51913] transition">Home</Link>
               <Link href="/learn-more" className="text-[#4A4C4E]/70 hover:text-[#E51913] transition">About</Link>
-              <Link href="/register" className="text-[#4A4C4E]/70 hover:text-[#E51913] transition">Become a Partner</Link>
             </nav>
 
             <div className="flex items-center gap-3">
-              <Link href="/login" className="hidden sm:inline-flex text-sm font-medium text-[#4A4C4E]/70 hover:text-[#E51913] transition px-3 py-1.5 rounded-full hover:bg-[#F5F6F7]">
+              <Link href="/login" className="text-sm font-medium text-[#4A4C4E]/70 hover:text-[#E51913] transition px-3 py-1.5 rounded-full hover:bg-[#F5F6F7]">
                 Log in
+              </Link>
+              <Link href="/register" className="btn-primary text-sm py-2 px-5 shadow-lg shadow-[#E51913]/25">
+                Become a Partner
               </Link>
             </div>
           </div>
         </div>
       </header>
 
+      {/* Content */}
       <section className="py-16 md:py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4 mb-8">
@@ -64,9 +66,8 @@ export default function TermsOfService() {
             </div>
 
             <div className="prose prose-lg max-w-none text-[#4A4C4E]">
-              {/* Full terms of service content here */}
               <p className="text-lg">
-                Welcome to Exousia Fellowship Incorporated. By using our website and services, you agree to comply with and be bound by the following terms and conditions...
+                Welcome to Exousia Fellowship Incorporated. By using our website and services, you agree to comply with and be bound by the following terms and conditions.
               </p>
 
               <h2 className="text-2xl font-bold text-[#4A4C4E] mt-8 flex items-center gap-2">
@@ -117,19 +118,6 @@ export default function TermsOfService() {
               </h2>
               <p>
                 We are committed to protecting your privacy. Please review our <Link href="/privacy-policy" className="text-[#E51913] hover:underline">Privacy Policy</Link> to understand how we collect, use, and safeguard your personal information.
-              </p>
-
-              <h2 className="text-2xl font-bold text-[#4A4C4E] mt-8">Limitation of Liability</h2>
-              <p>
-                Exousia Fellowship Incorporated provides the platform "as is" without any warranties. We are not liable for any damages arising from the use of our services, including but not limited to technical issues, data loss, or interruptions in service.
-              </p>
-
-              <h2 className="text-2xl font-bold text-[#4A4C4E] mt-8 flex items-center gap-2">
-                <Clock className="w-6 h-6 text-[#3BBCEB]" />
-                Changes to Terms
-              </h2>
-              <p>
-                We reserve the right to update or modify these Terms of Service at any time without prior notice. It is your responsibility to review these terms periodically. Continued use of our services after any changes constitutes your acceptance of the modified terms.
               </p>
 
               <h2 className="text-2xl font-bold text-[#4A4C4E] mt-8">Contact Us</h2>

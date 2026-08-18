@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import { Navbar } from '@/app/components/ui/Navbar';
 import { 
   ArrowRight, 
   CheckCircle, 
@@ -102,6 +103,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen">
+      <Navbar transparent={true} />
       {/* Navbar */}
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled ? 'glass border-b border-[#8A8C8E]/10' : 'bg-transparent'

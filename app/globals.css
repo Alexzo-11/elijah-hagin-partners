@@ -298,3 +298,40 @@ body {
 .hover-secondary:hover {
   color: #3BBCEB;
 }
+/* Mobile responsive utilities */
+@media (max-width: 640px) {
+  .card-premium {
+    padding: 0.75rem !important;
+  }
+  .input-premium {
+    font-size: 14px !important;
+    padding: 0.6rem 0.8rem !important;
+  }
+  .btn-primary, .btn-outline {
+    font-size: 13px !important;
+    padding: 0.5rem 1rem !important;
+  }
+}
+
+/* Hide scrollbar for cleaner mobile tables */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Truncate text with ellipsis */
+.truncate-mobile {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
+
+@media (min-width: 640px) {
+  .truncate-mobile {
+    max-width: none;
+  }
+}
