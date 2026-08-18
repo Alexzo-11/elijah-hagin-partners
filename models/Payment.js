@@ -23,7 +23,4 @@ const PaymentSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-// Ensure no unique index is created
-// The index is removed by dropping the collection
-
 export default mongoose.models.Payment || mongoose.model('Payment', PaymentSchema);

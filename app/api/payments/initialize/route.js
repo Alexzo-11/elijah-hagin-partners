@@ -6,7 +6,6 @@ import Partner from '@/models/Partner';
 
 export async function POST(request) {
   try {
-    // Get authenticated user
     const user = await getAuthUser();
     
     if (!user) {
@@ -25,7 +24,6 @@ export async function POST(request) {
       );
     }
 
-    // Only allow Monthly Partnership
     if (purpose !== 'Monthly Partnership') {
       return NextResponse.json(
         { error: 'Only Monthly Partnership payments are accepted' },
@@ -35,7 +33,6 @@ export async function POST(request) {
 
     await connectToDatabase();
 
-    // Find the partner
     const partner = await Partner.findById(user.id);
     if (!partner) {
       return NextResponse.json(
@@ -47,7 +44,7 @@ export async function POST(request) {
     // Generate unique reference
     const reference = `PAY-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
-    // Create payment record
+    // Create payment record with pending status
     const payment = new Payment({
       partner: partner._id,
       amount,
@@ -55,18 +52,17 @@ export async function POST(request) {
       status: 'pending',
       method: 'card',
       purpose: 'Monthly Partnership',
+      paidAt: null,
+      receiptNumber: null,
     });
 
     await payment.save();
 
-    // Check if Paystack is configured
     const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
     
     if (!PAYSTACK_SECRET_KEY || PAYSTACK_SECRET_KEY === 'sk_test_...') {
-      // For demo/testing without Paystack
       console.log('⚠️ Paystack not configured. Using demo mode.');
       
-      // Return demo success URL (for testing)
       return NextResponse.json({
         success: true,
         authorization_url: `${process.env.APP_URL}/partner/payments/success?reference=${reference}&demo=true`,
@@ -76,14 +72,12 @@ export async function POST(request) {
       });
     }
 
-    // Initialize Paystack transaction
     try {
-      // Dynamic import for Paystack to avoid issues
       const paystack = (await import('paystack')).default;
       const paystackInstance = paystack(PAYSTACK_SECRET_KEY);
 
       const response = await paystackInstance.transaction.initialize({
-        amount: amount * 100, // Paystack uses kobo
+        amount: amount * 100,
         email: partner.email,
         reference,
         callback_url: `${process.env.APP_URL}/partner/payments/success`,
@@ -105,10 +99,7 @@ export async function POST(request) {
     } catch (paystackError) {
       console.error('Paystack error:', paystackError);
       
-      // Fallback to demo mode if Paystack fails
       const demoReference = `PAY-DEMO-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-      
-      // Update payment with demo reference
       payment.reference = demoReference;
       await payment.save();
 
