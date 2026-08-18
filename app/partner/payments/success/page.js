@@ -15,13 +15,8 @@ import {
   Eye,
   Sparkles,
   Heart,
-  User,
-  Phone,
-  MapPin,
   CreditCard,
-  Shield,
-  Calendar,
-  Clock
+  Shield
 } from 'lucide-react';
 
 export default function PaymentSuccess() {
@@ -29,7 +24,6 @@ export default function PaymentSuccess() {
   const router = useRouter();
   const reference = searchParams.get('reference');
   const trxref = searchParams.get('trxref');
-  const demo = searchParams.get('demo') === 'true';
   
   const [loading, setLoading] = useState(true);
   const [payment, setPayment] = useState(null);
@@ -37,7 +31,6 @@ export default function PaymentSuccess() {
   const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
-    // Use either reference or trxref
     const ref = reference || trxref;
     
     if (!ref) {
@@ -85,9 +78,7 @@ export default function PaymentSuccess() {
     setDownloading(true);
     try {
       const res = await fetch(`/api/payments/receipt/${payment.id}`);
-      if (!res.ok) {
-        throw new Error('Failed to download receipt');
-      }
+      if (!res.ok) throw new Error('Failed to download receipt');
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -98,7 +89,6 @@ export default function PaymentSuccess() {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Download error:', error);
       alert('Failed to download receipt. Please try again.');
     } finally {
       setDownloading(false);
@@ -132,7 +122,7 @@ export default function PaymentSuccess() {
             <XCircle className="w-10 h-10 text-red-600" />
           </div>
           <h2 className="text-2xl font-bold text-[#4A4C4E]">Payment Failed</h2>
-          <p className="text-[#4A4C4E]/60 mt-2">{error || 'Something went wrong with your payment'}</p>
+          <p className="text-[#4A4C4E]/60 mt-2">{error || 'Something went wrong'}</p>
           <Link href="/partner/payments" className="btn-primary mt-6 inline-flex items-center gap-2">
             Try Again
             <ArrowRight className="w-4 h-4" />
@@ -172,11 +162,6 @@ export default function PaymentSuccess() {
             <span className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-lg text-white text-sm font-medium">
               {payment.reference}
             </span>
-            {demo && (
-              <span className="px-3 py-1 bg-amber-400/20 backdrop-blur-sm rounded-full text-amber-100 text-xs font-medium">
-                Demo Mode
-              </span>
-            )}
           </div>
         </div>
       </motion.div>
@@ -307,8 +292,8 @@ export default function PaymentSuccess() {
         className="text-center text-xs text-[#4A4C4E]/30 space-y-1"
       >
         <p>This is a computer-generated receipt. No signature required.</p>
-        <p>For any questions, please contact us at support@exousiafellowship.org</p>
-        <p className="text-[#E51913]/20 mt-2">© {new Date().getFullYear()} Exousia Fellowship Incorporated</p>
+        <p>For questions: support@exousiafellowship.org</p>
+        <p className="text-[#E51913]/20 mt-2">© 2026 Exousia Fellowship Incorporated</p>
       </motion.div>
     </div>
   );
