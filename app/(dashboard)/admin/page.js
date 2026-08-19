@@ -16,10 +16,6 @@ import {
   CheckCircle,
   XCircle,
   Loader2,
-  Wallet,
-  Calendar,
-  BarChart3,
-  Mail
 } from 'lucide-react';
 import { ExcelExport } from '@/app/components/ExcelExport';
 
@@ -159,7 +155,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Stats - Responsive Grid */}
+      {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         {statCards.map((stat, index) => {
           const Icon = stat.icon;
@@ -186,7 +182,7 @@ export default function AdminDashboard() {
         })}
       </div>
 
-      {/* Recent Transactions - Responsive Table */}
+      {/* Recent Transactions - Fixed Overflow */}
       <div className="card-premium p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
           <div>
@@ -205,7 +201,7 @@ export default function AdminDashboard() {
         <div className="overflow-x-auto -mx-4 sm:mx-0">
           <table className="w-full min-w-[500px] sm:min-w-0">
             <thead>
-              <tr className="text-left text-xs font-medium text-[#4A4C4E]/40 uppercase tracking-wider border-b border-[#E5E6E7]">
+              <tr className="text-left text-[10px] sm:text-xs font-medium text-[#4A4C4E]/40 uppercase tracking-wider border-b border-[#E5E6E7]">
                 <th className="pb-2 sm:pb-3 pr-2 sm:pr-4 font-medium">Partner</th>
                 <th className="pb-2 sm:pb-3 px-2 sm:px-4 font-medium hidden sm:table-cell">Reference</th>
                 <th className="pb-2 sm:pb-3 px-2 sm:px-4 font-medium">Amount</th>
@@ -224,16 +220,22 @@ export default function AdminDashboard() {
                 recentPayments.map((payment) => (
                   <tr key={payment.id} className="hover:bg-[#F5F6F7] transition-colors">
                     <td className="py-2 sm:py-3 pr-2 sm:pr-4">
-                      <div>
-                        <p className="text-xs sm:text-sm font-medium text-[#4A4C4E] truncate max-w-[80px] sm:max-w-none">{payment.partner}</p>
-                        <p className="text-[10px] sm:text-xs text-[#4A4C4E]/40 truncate max-w-[80px] sm:max-w-none">{payment.email}</p>
+                      <div className="max-w-[100px] sm:max-w-[150px] md:max-w-none">
+                        <p className="text-xs sm:text-sm font-medium text-[#4A4C4E] truncate">{payment.partner}</p>
+                        <p className="text-[10px] sm:text-xs text-[#4A4C4E]/40 truncate">{payment.email}</p>
                       </div>
                     </td>
-                    <td className="py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-mono text-[#4A4C4E]/60 hidden sm:table-cell">{payment.reference}</td>
-                    <td className="py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-[#4A4C4E]">₦{payment.amount.toLocaleString()}</td>
-                    <td className="py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm text-[#4A4C4E]/60 hidden md:table-cell">{payment.date}</td>
+                    <td className="py-2 sm:py-3 px-2 sm:px-4 text-[10px] sm:text-sm font-mono text-[#4A4C4E]/60 hidden sm:table-cell truncate max-w-[100px] md:max-w-none">
+                      {payment.reference}
+                    </td>
+                    <td className="py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-[#4A4C4E] whitespace-nowrap">
+                      ₦{payment.amount.toLocaleString()}
+                    </td>
+                    <td className="py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm text-[#4A4C4E]/60 hidden md:table-cell whitespace-nowrap">
+                      {payment.date}
+                    </td>
                     <td className="py-2 sm:py-3 pl-2 sm:pl-4">
-                      <span className={`inline-flex items-center gap-1 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium border ${getStatusColor(payment.status)}`}>
+                      <span className={`inline-flex items-center gap-1 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium border ${getStatusColor(payment.status)} whitespace-nowrap`}>
                         {getStatusIcon(payment.status)}
                         <span className="hidden xs:inline">{payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}</span>
                       </span>

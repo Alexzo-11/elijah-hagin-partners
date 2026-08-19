@@ -24,8 +24,7 @@ export function Navbar({ transparent = false }) {
   const navLinks = [
     { href: '#home', label: 'Home', icon: Home },
     { href: '#about', label: 'About', icon: Church },
-    { href: '#ministries', label: 'Ministries', icon: Heart },
-    { href: '#cta', label: 'Get Started', icon: User },
+    { href: '#ministries', label: 'Ministry', icon: Heart },
   ];
 
   return (
@@ -35,7 +34,7 @@ export function Navbar({ transparent = false }) {
     `}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
-          {/* Logo - Mobile: Only logo, no text */}
+          {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
             <motion.div 
               whileHover={{ rotate: -10, scale: 1.05 }}
@@ -57,7 +56,7 @@ export function Navbar({ transparent = false }) {
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
-            {!user && navLinks.map((link) => (
+            {navLinks.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
@@ -148,7 +147,6 @@ export function Navbar({ transparent = false }) {
 
           {/* Mobile: Only Logo + Toggle Button */}
           <div className="flex items-center gap-2 md:hidden">
-            {/* Mobile Toggle Button - Always visible on mobile */}
             <button
               className="p-2 hover:bg-white/50 rounded-lg transition"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -160,7 +158,7 @@ export function Navbar({ transparent = false }) {
         </div>
       </div>
 
-      {/* Mobile Menu - Full featured dropdown */}
+      {/* Mobile Menu */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div

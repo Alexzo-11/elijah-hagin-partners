@@ -20,6 +20,9 @@ import {
   Loader2
 } from 'lucide-react';
 
+// Remove ThemeToggle import
+// import { ThemeToggle } from '@/app/components/ThemeToggle';
+
 const navItems = [
   { href: '/admin', label: 'Overview', icon: LayoutDashboard },
   { href: '/admin/partners', label: 'Partners', icon: Users },
@@ -106,7 +109,7 @@ export default function AdminLayout({ children }) {
                   onClick={() => setSidebarOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
                     isActive
-                      ? 'bg-[#E51913] text-white shadow-lg shadow-[#E51913]/25'
+                      ? 'bg-gradient-to-r from-[#E51913] to-[#E51913]/80 text-white shadow-lg shadow-[#E51913]/25'
                       : 'text-[#4A4C4E]/60 hover:bg-[#F5F6F7] hover:text-[#E51913]'
                   }`}
                 >
@@ -119,7 +122,7 @@ export default function AdminLayout({ children }) {
           </nav>
 
           <div className="p-4 border-t border-[#E5E6E7]">
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#F5F6F7] mb-3">
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-[#FFE8E7] to-[#E8F7FE] mb-3">
               <div className="w-9 h-9 rounded-full bg-[#E51913]/10 flex items-center justify-center text-[#E51913] font-semibold text-sm">
                 {user?.firstName?.[0]}{user?.lastName?.[0]}
               </div>
@@ -145,7 +148,7 @@ export default function AdminLayout({ children }) {
       </aside>
 
       <div className="lg:pl-72">
-        <header className="bg-white border-b border-[#E5E6E7] sticky top-0 z-30">
+        <header className="glass border-b border-[#8A8C8E]/10 sticky top-0 z-30">
           <div className="px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <button
@@ -165,9 +168,10 @@ export default function AdminLayout({ children }) {
                 <input
                   type="text"
                   placeholder="Search..."
-                  className="w-48 lg:w-64 px-4 py-2 pl-9 rounded-lg bg-[#F5F6F7] border border-[#E5E6E7] text-sm focus:outline-none focus:ring-2 focus:ring-[#E51913]/10 focus:border-[#E51913] transition-all text-[#4A4C4E] placeholder:text-[#8A8C8E]"
+                  className="w-48 lg:w-64 px-4 py-2 pl-9 rounded-lg bg-white/50 border border-[#E5E6E7] text-sm focus:outline-none focus:ring-2 focus:ring-[#E51913]/10 focus:border-[#E51913] transition-all text-[#4A4C4E] placeholder:text-[#8A8C8E]"
                 />
               </div>
+              {/* ThemeToggle removed */}
               <div className="w-8 h-8 rounded-full bg-[#E51913]/10 flex items-center justify-center text-[#E51913] font-semibold text-sm">
                 {user?.firstName?.[0]}{user?.lastName?.[0]}
               </div>

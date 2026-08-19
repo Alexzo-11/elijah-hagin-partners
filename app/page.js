@@ -158,7 +158,7 @@ export default function Home() {
               <a href="#home" className="block text-[#4A4C4E]/70 hover:text-[#E51913] transition">Home</a>
               <a href="#about" className="block text-[#4A4C4E]/70 hover:text-[#E51913] transition">About</a>
               <a href="#ministries" className="block text-[#4A4C4E]/70 hover:text-[#E51913] transition">Ministry</a>
-              <Link href="/learn-more" className="block text-[#4A4C4E]/70 hover:text-[#E51913] transition">Learn More</Link>
+            
               <Link href="/login" className="block text-[#4A4C4E]/70 hover:text-[#E51913] transition">Log in</Link>
             </div>
           </div>
@@ -224,7 +224,7 @@ export default function Home() {
               >
                 Partner with
                 <span className="text-[#E51913] relative inline-block">
-                  Exousia Fellowship
+                   Exousia Fellowship
                   <motion.span
                     className="absolute -bottom-2 left-0 w-full h-1 bg-[#E51913]/30 rounded-full"
                     initial={{ scaleX: 0 }}

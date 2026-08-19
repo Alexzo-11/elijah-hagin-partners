@@ -5,7 +5,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/app/components/providers/AuthProvider';
-import { ThemeToggle } from '@/app/components/ThemeToggle';
 import {
   LayoutDashboard,
   CreditCard,
@@ -17,6 +16,9 @@ import {
   ChevronRight,
   Loader2
 } from 'lucide-react';
+
+// Remove ThemeToggle import
+// import { ThemeToggle } from '@/app/components/ThemeToggle';
 
 const navItems = [
   { href: '/partner', label: 'Dashboard', icon: LayoutDashboard },
@@ -156,7 +158,7 @@ export default function PartnerLayout({ children }) {
             </div>
 
             <div className="flex items-center gap-3">
-              <ThemeToggle />
+              {/* ThemeToggle removed */}
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#3BBCEB] to-[#2A9FD4]/10 flex items-center justify-center text-[#3BBCEB] font-semibold text-sm">
                 {user?.firstName?.[0]}{user?.lastName?.[0]}
               </div>
