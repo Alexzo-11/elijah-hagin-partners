@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { Navbar } from '@/app/components/ui/Navbar';
 import { 
   ArrowRight, 
   CheckCircle, 
@@ -17,8 +16,6 @@ import {
   Mail,
   Phone,
   MapPin,
-  Clock,
-  Send,
   Globe,
   Play,
   ZoomIn,
@@ -101,69 +98,71 @@ export default function Home() {
     },
   };
 
-{/* Navbar - Fixed version */}
-<header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-  scrolled ? 'glass border-b border-[#8A8C8E]/10' : 'bg-transparent'
-}`}>
-  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div className="flex items-center justify-between h-16 md:h-20">
-      <Link href="/" className="flex items-center gap-2.5 group">
-        <motion.div 
-          whileHover={{ rotate: -10, scale: 1.05 }}
-          className="relative w-9 h-9 md:w-10 md:h-10 flex-shrink-0"
-        >
-          <Image
-            src="/images/logopng.png"
-            alt="Exousia Fellowship"
-            fill
-            className="object-contain group-hover:scale-105 transition-transform"
-            priority
-          />
-        </motion.div>
-        <span className="font-bold text-lg tracking-tight text-[#4A4C4E]">
-          Exousia
-          <span className="text-[#E51913] font-normal"> Fellowship Inc.</span>
-        </span>
-      </Link>
+  return (
+    <main className="min-h-screen bg-[#F5F6F7]">
+      {/* Navbar - Fixed version */}
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled ? 'glass border-b border-[#8A8C8E]/10' : 'bg-transparent'
+      }`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 md:h-20">
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <motion.div 
+                whileHover={{ rotate: -10, scale: 1.05 }}
+                className="relative w-9 h-9 md:w-10 md:h-10 flex-shrink-0"
+              >
+                <Image
+                  src="/images/logopng.png"
+                  alt="Exousia Fellowship"
+                  fill
+                  className="object-contain group-hover:scale-105 transition-transform"
+                  priority
+                />
+              </motion.div>
+              <span className="font-bold text-lg tracking-tight text-[#4A4C4E]">
+                Exousia
+                <span className="text-[#E51913] font-normal"> Fellowship Inc.</span>
+              </span>
+            </Link>
 
-      {/* Desktop Nav - Only ONE set of links */}
-      <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
-        <a href="#home" className="text-[#4A4C4E]/70 hover:text-[#E51913] transition">Home</a>
-        <a href="#about" className="text-[#4A4C4E]/70 hover:text-[#E51913] transition">About</a>
-        <a href="#ministries" className="text-[#4A4C4E]/70 hover:text-[#E51913] transition">Ministry</a>
-      </nav>
+            {/* Desktop Nav - Only ONE set of links */}
+            <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
+              <a href="#home" className="text-[#4A4C4E]/70 hover:text-[#E51913] transition">Home</a>
+              <a href="#about" className="text-[#4A4C4E]/70 hover:text-[#E51913] transition">About</a>
+              <a href="#ministries" className="text-[#4A4C4E]/70 hover:text-[#E51913] transition">Ministry</a>
+            </nav>
 
-      {/* Actions */}
-      <div className="flex items-center gap-3">
-        <Link href="/login" className="hidden sm:inline-flex text-sm font-medium text-[#4A4C4E]/70 hover:text-[#E51913] transition px-3 py-1.5 rounded-full hover:bg-[#F5F6F7]">
-          Log in
-        </Link>
-        <Link href="/register" className="btn-primary text-sm py-2 px-5 shadow-lg shadow-[#E51913]/25">
-          Become a Partner
-        </Link>
-        <button 
-          className="md:hidden p-2 hover:bg-[#F5F6F7] rounded-lg"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-        >
-          {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
-      </div>
-    </div>
-  </div>
+            {/* Actions */}
+            <div className="flex items-center gap-3">
+              <Link href="/login" className="hidden sm:inline-flex text-sm font-medium text-[#4A4C4E]/70 hover:text-[#E51913] transition px-3 py-1.5 rounded-full hover:bg-[#F5F6F7]">
+                Log in
+              </Link>
+              <Link href="/register" className="btn-primary text-sm py-2 px-5 shadow-lg shadow-[#E51913]/25">
+                Become a Partner
+              </Link>
+              <button 
+                className="md:hidden p-2 hover:bg-[#F5F6F7] rounded-lg"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+              >
+                {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+            </div>
+          </div>
+        </div>
 
-  {/* Mobile Menu - Only ONE set of links */}
-  {isMenuOpen && (
-    <div className="md:hidden glass border-t border-[#8A8C8E]/10">
-      <div className="px-4 py-6 space-y-4">
-        <a href="#home" className="block text-[#4A4C4E]/70 hover:text-[#E51913] transition">Home</a>
-        <a href="#about" className="block text-[#4A4C4E]/70 hover:text-[#E51913] transition">About</a>
-        <a href="#ministries" className="block text-[#4A4C4E]/70 hover:text-[#E51913] transition">Ministry</a>
-        <Link href="/login" className="block text-[#4A4C4E]/70 hover:text-[#E51913] transition">Log in</Link>
-      </div>
-    </div>
-  )}
-</header>
-
+        {/* Mobile Menu - Only ONE set of links */}
+        {isMenuOpen && (
+          <div className="md:hidden glass border-t border-[#8A8C8E]/10">
+            <div className="px-4 py-6 space-y-4">
+              <a href="#home" className="block text-[#4A4C4E]/70 hover:text-[#E51913] transition">Home</a>
+              <a href="#about" className="block text-[#4A4C4E]/70 hover:text-[#E51913] transition">About</a>
+              <a href="#ministries" className="block text-[#4A4C4E]/70 hover:text-[#E51913] transition">Ministry</a>
+              <Link href="/login" className="block text-[#4A4C4E]/70 hover:text-[#E51913] transition">Log in</Link>
+            </div>
+          </div>
+        )}
+      </header>
+       
       {/* Hero Section - Modern Photo Grid */}
       <section id="home" className="relative min-h-screen flex items-center pt-20 overflow-hidden">
         {/* Enhanced Background with Blue Elements */}
