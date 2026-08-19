@@ -611,11 +611,11 @@ export default function Home() {
 
           <div className="border-t border-white/5 mt-12 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-white/30">
             <p>&copy; 2026 Exousia Fellowship Incorporated. All rights reserved.</p>
-            <div className="flex gap-6">
+            {/* <div className="flex gap-6">
               <Link href="/privacy-policy" className="hover:text-[#E51913] transition">Privacy Policy</Link>
               <Link href="/terms-of-service" className="hover:text-[#E51913] transition">Terms of Service</Link>
               <Link href="/cookies" className="hover:text-[#E51913] transition">Cookies</Link>
-            </div>
+            </div> */}
           </div>
         </div>
       </footer>
