@@ -51,7 +51,7 @@ export default function Home() {
   const heroImages = [
     {
       id: 1,
-      image: '/images/worship.jpg',
+      image: '/images/prayer.jpg',
       size: 'lg'
     },
     {
@@ -61,7 +61,7 @@ export default function Home() {
     },
     {
       id: 3,
-      image: '/images/prayer.jpg',
+      image: '/images/worship.jpg',
       size: 'sm'
     },
     {
@@ -99,7 +99,7 @@ export default function Home() {
         damping: 10,
       },
     },
-  };// Find the Navbar section and update it
+  };
 
 {/* Navbar - Fixed version */}
 <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
