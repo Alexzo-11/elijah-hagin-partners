@@ -8,13 +8,16 @@ import {
   Phone, 
   Lock, 
   Save, 
-  Loader2
+  Loader2,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
 
 export default function PartnerSettings() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -39,13 +42,69 @@ export default function PartnerSettings() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setError('');
     setSuccess(false);
+    setLoading(true);
 
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setSuccess(true);
-    setLoading(false);
-    setTimeout(() => setSuccess(false), 3000);
+    // Validate passwords if changing
+    if (formData.newPassword) {
+      if (formData.newPassword.length < 6) {
+        setError('New password must be at least 6 characters');
+        setLoading(false);
+        return;
+      }
+      if (formData.newPassword !== formData.confirmPassword) {
+        setError('Passwords do not match');
+        setLoading(false);
+        return;
+      }
+      if (!formData.currentPassword) {
+        setError('Current password is required to change password');
+        setLoading(false);
+        return;
+      }
+    }
+
+    try {
+      const res = await fetch('/api/partner/update-profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          currentPassword: formData.currentPassword,
+          newPassword: formData.newPassword,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to update profile');
+      }
+
+      setSuccess(true);
+      // Update user in context
+      if (updateUser) {
+        updateUser(data.user);
+      }
+      
+      // Clear password fields
+      setFormData(prev => ({
+        ...prev,
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      }));
+
+      setTimeout(() => setSuccess(false), 5000);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -57,8 +116,15 @@ export default function PartnerSettings() {
 
       {success && (
         <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm flex items-center gap-2">
-          <Save className="w-4 h-4" />
+          <CheckCircle className="w-5 h-5" />
           Settings saved successfully!
+        </div>
+      )}
+
+      {error && (
+        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm flex items-center gap-2">
+          <AlertCircle className="w-5 h-5" />
+          {error}
         </div>
       )}
 
@@ -177,12 +243,6 @@ export default function PartnerSettings() {
                 <Save className="w-4 h-4" />
               </>
             )}
-          </button>
-          <button
-            type="button"
-            className="text-[#4A4C4E]/60 hover:text-[#4A4C4E] text-sm font-medium"
-          >
-            Cancel
           </button>
         </div>
       </form>

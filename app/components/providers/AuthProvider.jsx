@@ -16,14 +16,10 @@ export function AuthProvider({ children }) {
         const res = await fetch('/api/auth/me');
         if (res.ok) {
           const data = await res.json();
-          console.log('AuthProvider - User:', data.user); // Debug log
           setUser(data.user);
-        } else {
-          setUser(null);
         }
       } catch (error) {
         console.error('Auth check error:', error);
-        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -45,16 +41,7 @@ export function AuthProvider({ children }) {
         throw new Error(data.error || 'Login failed');
       }
       
-      console.log('Login - User data:', data.user); // Debug log
       setUser(data.user);
-      
-      // Redirect based on role
-      if (data.user.role === 'admin') {
-        router.push('/admin');
-      } else {
-        router.push('/partner');
-      }
-      
       return { success: true };
     } catch (error) {
       return { success: false, error: error.message };
@@ -76,11 +63,17 @@ export function AuthProvider({ children }) {
       }
       
       setUser(data.user);
-      router.push('/partner');
       return { success: true };
     } catch (error) {
       return { success: false, error: error.message };
     }
+  };
+
+  const updateUser = (updatedUserData) => {
+    setUser(prev => ({
+      ...prev,
+      ...updatedUserData,
+    }));
   };
 
   const logout = async () => {
@@ -94,7 +87,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, updateUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

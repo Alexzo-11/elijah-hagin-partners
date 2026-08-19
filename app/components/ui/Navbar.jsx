@@ -50,7 +50,7 @@ export function Navbar({ transparent = false }) {
             </motion.div>
             <span className="font-bold text-lg tracking-tight text-[#4A4C4E] hidden sm:inline">
               Exousia
-              <span className="text-[#E51913] font-normal"> Partners Inc.</span>
+              <span className="text-[#E51913] font-normal"> Fellowship Inc.</span>
             </span>
           </Link>
 

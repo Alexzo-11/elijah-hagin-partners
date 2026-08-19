@@ -9,21 +9,88 @@ import {
   Lock,
   Save,
   Loader2,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
 
 export default function AdminSettings() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
+  const [formData, setFormData] = useState({
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setError('');
     setSuccess(false);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setSuccess(true);
-    setLoading(false);
-    setTimeout(() => setSuccess(false), 3000);
+    setLoading(true);
+
+    // Validate passwords if changing
+    if (formData.newPassword) {
+      if (formData.newPassword.length < 6) {
+        setError('New password must be at least 6 characters');
+        setLoading(false);
+        return;
+      }
+      if (formData.newPassword !== formData.confirmPassword) {
+        setError('Passwords do not match');
+        setLoading(false);
+        return;
+      }
+      if (!formData.currentPassword) {
+        setError('Current password is required to change password');
+        setLoading(false);
+        return;
+      }
+    }
+
+    try {
+      const res = await fetch('/api/admin/update-profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          currentPassword: formData.currentPassword,
+          newPassword: formData.newPassword,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to update profile');
+      }
+
+      setSuccess(true);
+      if (updateUser) {
+        updateUser(data.user);
+      }
+      
+      setFormData(prev => ({
+        ...prev,
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      }));
+
+      setTimeout(() => setSuccess(false), 5000);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -35,13 +102,19 @@ export default function AdminSettings() {
 
       {success && (
         <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm flex items-center gap-2">
-          <Save className="w-4 h-4" />
+          <CheckCircle className="w-5 h-5" />
           Settings saved successfully!
         </div>
       )}
 
+      {error && (
+        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm flex items-center gap-2">
+          <AlertCircle className="w-5 h-5" />
+          {error}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Profile Information */}
         <div className="card-premium p-6">
           <h2 className="text-lg font-semibold text-[#4A4C4E] mb-4 flex items-center gap-2">
             <User className="w-5 h-5 text-[#E51913]" />
@@ -53,7 +126,8 @@ export default function AdminSettings() {
               <input
                 type="text"
                 className="input-premium"
-                defaultValue={user?.firstName || ''}
+                value={formData.firstName}
+                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
               />
             </div>
             <div>
@@ -61,7 +135,8 @@ export default function AdminSettings() {
               <input
                 type="text"
                 className="input-premium"
-                defaultValue={user?.lastName || ''}
+                value={formData.lastName}
+                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
               />
             </div>
           </div>
@@ -74,7 +149,8 @@ export default function AdminSettings() {
                 <input
                   type="email"
                   className="input-premium pl-10"
-                  defaultValue={user?.email || ''}
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
               </div>
             </div>
@@ -85,14 +161,14 @@ export default function AdminSettings() {
                 <input
                   type="tel"
                   className="input-premium pl-10"
-                  defaultValue="+1 234 567 890"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Change Password */}
         <div className="card-premium p-6">
           <h2 className="text-lg font-semibold text-[#4A4C4E] mb-4 flex items-center gap-2">
             <Lock className="w-5 h-5 text-[#8A8C8E]" />
@@ -105,6 +181,8 @@ export default function AdminSettings() {
                 type="password"
                 className="input-premium"
                 placeholder="Enter current password"
+                value={formData.currentPassword}
+                onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -114,6 +192,8 @@ export default function AdminSettings() {
                   type="password"
                   className="input-premium"
                   placeholder="Enter new password"
+                  value={formData.newPassword}
+                  onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
                 />
               </div>
               <div>
@@ -122,6 +202,8 @@ export default function AdminSettings() {
                   type="password"
                   className="input-premium"
                   placeholder="Confirm password"
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 />
               </div>
             </div>
