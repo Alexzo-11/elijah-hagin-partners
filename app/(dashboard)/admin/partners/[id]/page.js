@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/app/components/providers/AuthProvider';
 import {
   ArrowLeft,
   User,
@@ -11,147 +12,166 @@ import {
   MapPin,
   Calendar,
   DollarSign,
-  Award,
-  Users,
-  Download,
-  FileText,
+  CreditCard,
   CheckCircle,
   XCircle,
   Clock,
+  Send,
+  FileText,
+  Download,
   Edit,
-  Mail as MailIcon,
-  Flag,
-  Briefcase,
-  Heart,
+  Trash2,
   Loader2,
-  CreditCard,
+  AlertCircle,
+  UserCheck,
+  UserX,
+  Building,
+  Briefcase,
+  Calendar as CalendarIcon,
+  Activity,
   Eye,
-  BarChart3,
-  Printer,
-  Camera
+  Copy,
 } from 'lucide-react';
 
-export default function PartnerDetails() {
+export default function PartnerDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
   const [partner, setPartner] = useState(null);
   const [payments, setPayments] = useState([]);
-  const [generating, setGenerating] = useState(false);
-  const [showPassportModal, setShowPassportModal] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailData, setEmailData] = useState({
+    subject: '',
+    message: '',
+  });
+  const [activating, setActivating] = useState(false);
+  const [deactivating, setDeactivating] = useState(false);
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const partnerRes = await fetch(`/api/partners/${params.id}`);
-        if (partnerRes.ok) {
-          const data = await partnerRes.json();
-          setPartner(data.partner);
-        }
-
-        const paymentsRes = await fetch(`/api/partners/${params.id}/payments`);
-        if (paymentsRes.ok) {
-          const data = await paymentsRes.json();
-          setPayments(data.payments || []);
-        }
-      } catch (error) {
-        console.error('Error loading partner data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadData();
+    fetchPartnerData();
   }, [params.id]);
 
-  const getStatusColor = (isActive) => {
-    return isActive 
-      ? 'bg-emerald-50 text-emerald-700'
-      : 'bg-red-50 text-red-700';
+  const fetchPartnerData = async () => {
+    try {
+      const res = await fetch(`/api/admin/partners/${params.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setPartner(data.partner);
+        setPayments(data.payments || []);
+      }
+    } catch (error) {
+      console.error('Error fetching partner:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const getPartnershipBadge = (type) => {
-    const colors = {
-      SILVER: 'bg-gray-100 text-gray-700',
-      GOLD: 'bg-amber-100 text-amber-700',
-      DIAMOND: 'bg-blue-100 text-blue-700'
-    };
-    return colors[type] || 'bg-gray-100 text-gray-700';
+  const handleSendEmail = async (e) => {
+    e.preventDefault();
+    setSendingEmail(true);
+    setEmailError('');
+
+    try {
+      const res = await fetch('/api/admin/emails/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          partnerId: partner.id,
+          subject: emailData.subject,
+          message: emailData.message,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to send email');
+      }
+
+      setEmailSent(true);
+      setShowEmailModal(false);
+      setEmailData({ subject: '', message: '' });
+      
+      setTimeout(() => setEmailSent(false), 5000);
+    } catch (error) {
+      setEmailError(error.message);
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
+  const handleToggleStatus = async () => {
+    const isActive = partner.status === 'active';
+    
+    if (isActive) {
+      setDeactivating(true);
+    } else {
+      setActivating(true);
+    }
+
+    try {
+      const res = await fetch(`/api/admin/partners/${params.id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: isActive ? 'inactive' : 'active',
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setPartner(prev => ({
+          ...prev,
+          status: data.status,
+        }));
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+    } finally {
+      setActivating(false);
+      setDeactivating(false);
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'active': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      case 'inactive': return 'bg-gray-50 text-gray-700 border-gray-200';
+      case 'suspended': return 'bg-red-50 text-red-700 border-red-200';
+      default: return 'bg-gray-50 text-gray-700 border-gray-200';
+    }
   };
 
   const getPaymentStatusColor = (status) => {
     switch (status) {
-      case 'success': return 'bg-emerald-50 text-emerald-700';
-      case 'pending': return 'bg-amber-50 text-amber-700';
-      case 'failed': return 'bg-red-50 text-red-700';
-      default: return 'bg-gray-50 text-gray-700';
-    }
-  };
-
-  const handleGenerateReport = async () => {
-    setGenerating(true);
-    try {
-      const res = await fetch(`/api/partners/${params.id}/report`, {
-        method: 'POST',
-      });
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `partner-report-${params.id}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-      }
-    } catch (error) {
-      console.error('Error generating report:', error);
-      alert('Failed to generate report');
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  const handleViewPayment = (paymentId) => {
-    router.push(`/admin/payments/${paymentId}`);
-  };
-
-  const handleViewReceipt = (paymentId) => {
-    window.open(`/api/payments/receipt/${paymentId}`, '_blank');
-  };
-
-  const handleDownloadReceipt = async (paymentId) => {
-    try {
-      const res = await fetch(`/api/payments/receipt/${paymentId}`);
-      if (!res.ok) {
-        throw new Error('Failed to download receipt');
-      }
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `receipt-${paymentId}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Download error:', error);
-      alert('Failed to download receipt');
+      case 'success': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      case 'pending': return 'bg-amber-50 text-amber-700 border-amber-200';
+      case 'failed': return 'bg-red-50 text-red-700 border-red-200';
+      default: return 'bg-gray-50 text-gray-700 border-gray-200';
     }
   };
 
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="skeleton h-12 w-64 rounded"></div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="skeleton h-24 rounded-xl"></div>
-          ))}
+        <div className="flex items-center gap-3">
+          <div className="skeleton h-10 w-10 rounded-full"></div>
+          <div className="skeleton h-8 w-48 rounded"></div>
         </div>
-        <div className="skeleton h-96 rounded-xl"></div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="skeleton h-48 rounded-xl"></div>
+            <div className="skeleton h-64 rounded-xl"></div>
+          </div>
+          <div className="space-y-6">
+            <div className="skeleton h-64 rounded-xl"></div>
+            <div className="skeleton h-32 rounded-xl"></div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -159,8 +179,10 @@ export default function PartnerDetails() {
   if (!partner) {
     return (
       <div className="text-center py-12">
-        <p className="text-[#4A4C4E]/60">Partner not found</p>
-        <Link href="/admin/partners" className="btn-primary mt-4 inline-block">
+        <AlertCircle className="w-16 h-16 text-[#4A4C4E]/20 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-[#4A4C4E]">Partner Not Found</h2>
+        <p className="text-[#4A4C4E]/60 mt-2">The partner you're looking for doesn't exist.</p>
+        <Link href="/admin/partners" className="btn-primary mt-6 inline-block">
           Back to Partners
         </Link>
       </div>
@@ -169,355 +191,341 @@ export default function PartnerDetails() {
 
   return (
     <div className="space-y-6">
-      {/* Passport Modal */}
-      {showPassportModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowPassportModal(false)}>
-          <div className="relative max-w-lg w-full" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={() => setShowPassportModal(false)}
-              className="absolute -top-12 right-0 text-white hover:text-[#E51913] transition"
-            >
-              <XCircle className="w-8 h-8" />
-            </button>
-            <div className="bg-white rounded-2xl p-4 overflow-hidden shadow-2xl">
-              {partner.passport ? (
-                <img
-                  src={partner.passport}
-                  alt={`${partner.firstName} ${partner.surname}`}
-                  className="w-full h-auto max-h-[70vh] object-contain rounded-xl"
-                />
-              ) : (
-                <div className="w-full h-96 bg-[#F5F6F7] flex items-center justify-center rounded-xl">
-                  <Camera className="w-16 h-16 text-[#8A8C8E]" />
-                </div>
-              )}
-              <div className="mt-4 text-center">
-                <p className="font-medium text-[#4A4C4E]">
-                  {partner.surname} {partner.firstName}
-                </p>
-                <p className="text-sm text-[#4A4C4E]/60">{partner.email}</p>
-              </div>
-            </div>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <Link
+            href="/admin/partners"
+            className="p-2 hover:bg-[#F5F6F7] rounded-lg transition flex-shrink-0"
+          >
+            <ArrowLeft className="w-5 h-5 text-[#4A4C4E]/60" />
+          </Link>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-[#4A4C4E] truncate">
+              {partner.firstName} {partner.surname}
+            </h1>
+            <p className="text-sm text-[#4A4C4E]/60 truncate">{partner.email}</p>
           </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
+          <button
+            onClick={handleToggleStatus}
+            disabled={activating || deactivating}
+            className={`text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-medium border transition flex items-center gap-1.5 ${
+              partner.status === 'active'
+                ? 'border-red-200 text-red-600 hover:bg-red-50'
+                : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50'
+            }`}
+          >
+            {activating || deactivating ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : partner.status === 'active' ? (
+              <>
+                <UserX className="w-3.5 h-3.5" />
+                Deactivate
+              </>
+            ) : (
+              <>
+                <UserCheck className="w-3.5 h-3.5" />
+                Activate
+              </>
+            )}
+          </button>
+          <button
+            onClick={() => setShowEmailModal(true)}
+            className="btn-primary text-xs sm:text-sm py-1.5 sm:py-2 px-3 sm:px-5"
+          >
+            <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            Send Email
+          </button>
+        </div>
+      </div>
+
+      {/* Success Message */}
+      {emailSent && (
+        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm flex items-center gap-2 animate-fade-up">
+          <CheckCircle className="w-5 h-5 flex-shrink-0" />
+          Email sent successfully to {partner.firstName} {partner.surname}!
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.back()}
-            className="p-2 hover:bg-[#F5F6F7] rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-[#4A4C4E]/60" />
-          </button>
-          <div className="flex items-center gap-3">
-            <div 
-              className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-[#E51913]/20 cursor-pointer group"
-              onClick={() => setShowPassportModal(true)}
-            >
-              {partner.passport ? (
-                <img
-                  src={partner.passport}
-                  alt={`${partner.firstName} ${partner.surname}`}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                />
-              ) : (
-                <div className="w-full h-full bg-[#F5F6F7] flex items-center justify-center">
-                  <Camera className="w-6 h-6 text-[#8A8C8E]" />
-                </div>
-              )}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                <Eye className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-[#4A4C4E]">
-                {partner.surname} {partner.firstName}
-              </h1>
-              <p className="text-sm text-[#4A4C4E]/60">{partner.email}</p>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          <span className={`badge-premium ${getPartnershipBadge(partner.partnershipType)}`}>
-            {partner.partnershipType}
-          </span>
-          <span className={`badge-premium ${getStatusColor(partner.isActive)}`}>
-            {partner.isActive ? 'Active' : 'Inactive'}
-          </span>
-          <button 
-            onClick={handleGenerateReport}
-            disabled={generating}
-            className="btn-outline text-sm py-2 px-4 flex items-center gap-2"
-          >
-            {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
-            Generate Report
-          </button>
-          <button className="btn-primary text-sm py-2 px-4 flex items-center gap-2">
-            <Edit className="w-4 h-4" />
-            Edit
-          </button>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="card-premium p-4 card-primary">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-[#E51913]/10 text-[#E51913]">
-              <Award className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-sm text-[#4A4C4E]/40">Partnership Type</p>
-              <p className="text-lg font-bold text-[#4A4C4E]">{partner.partnershipType}</p>
-            </div>
-          </div>
-        </div>
-        <div className="card-premium p-4 card-secondary">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-[#3BBCEB]/10 text-[#3BBCEB]">
-              <DollarSign className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-sm text-[#4A4C4E]/40">Monthly Commitment</p>
-              <p className="text-lg font-bold text-[#4A4C4E]">₦{partner.partnershipAmount?.toLocaleString() || 0}</p>
-            </div>
-          </div>
-        </div>
-        <div className="card-premium p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600">
-              <CheckCircle className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-sm text-[#4A4C4E]/40">Total Given</p>
-              <p className="text-lg font-bold text-[#4A4C4E]">₦{partner.totalContributed?.toLocaleString() || 0}</p>
-            </div>
-          </div>
-        </div>
-        <div className="card-premium p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-amber-50 text-amber-600">
-              <Calendar className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-sm text-[#4A4C4E]/40">Joined</p>
-              <p className="text-lg font-bold text-[#4A4C4E]">
-                {partner.createdAt ? new Date(partner.createdAt).toLocaleDateString() : 'N/A'}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs - Only Overview and Payments */}
-      <div className="border-b border-[#E5E6E7]">
-        <nav className="flex gap-6 overflow-x-auto">
-          {['overview', 'payments'].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`py-3 px-1 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
-                activeTab === tab
-                  ? 'border-[#E51913] text-[#E51913]'
-                  : 'border-transparent text-[#4A4C4E]/60 hover:text-[#4A4C4E]'
-              }`}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
-        </nav>
-      </div>
-
-      {/* Tab Content */}
-      <div>
-        {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <div className="card-premium p-6">
-                <h3 className="text-lg font-semibold text-[#4A4C4E] mb-4">Personal Information</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-[#4A4C4E]/40">Surname</p>
-                    <p className="font-medium text-[#4A4C4E]">{partner.surname}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-[#4A4C4E]/40">First Name</p>
-                    <p className="font-medium text-[#4A4C4E]">{partner.firstName}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-[#4A4C4E]/40">Gender</p>
-                    <p className="font-medium text-[#4A4C4E]">{partner.gender || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-[#4A4C4E]/40">Occupation</p>
-                    <p className="font-medium text-[#4A4C4E]">{partner.occupation || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-[#4A4C4E]/40">Marital Status</p>
-                    <p className="font-medium text-[#4A4C4E]">{partner.maritalStatus || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-[#4A4C4E]/40">Nationality</p>
-                    <p className="font-medium text-[#4A4C4E]">{partner.nationality || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-[#4A4C4E]/40">State of Origin</p>
-                    <p className="font-medium text-[#4A4C4E]">{partner.stateOfOrigin || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-[#4A4C4E]/40">State of Residence</p>
-                    <p className="font-medium text-[#4A4C4E]">{partner.stateOfResidence || 'N/A'}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="card-premium p-6">
-                <h3 className="text-lg font-semibold text-[#4A4C4E] mb-4">Contact Information</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <Mail className="w-5 h-5 text-[#4A4C4E]/40" />
-                    <span className="text-[#4A4C4E]">{partner.email}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Phone className="w-5 h-5 text-[#4A4C4E]/40" />
-                    <span className="text-[#4A4C4E]">{partner.phone || 'N/A'}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <MapPin className="w-5 h-5 text-[#4A4C4E]/40" />
-                    <span className="text-[#4A4C4E]">{partner.residentialAddress || 'N/A'}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="card-premium p-6">
-                <h3 className="text-lg font-semibold text-[#4A4C4E] mb-4">Passport Photo</h3>
-                <div className="flex flex-col items-center">
-                  <div 
-                    className="relative w-32 h-32 rounded-full overflow-hidden border-2 border-[#E51913]/20 cursor-pointer group"
-                    onClick={() => setShowPassportModal(true)}
-                  >
-                    {partner.passport ? (
-                      <img
-                        src={partner.passport}
-                        alt={`${partner.firstName} ${partner.surname}`}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-[#F5F6F7] flex items-center justify-center">
-                        <Camera className="w-10 h-10 text-[#8A8C8E]" />
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                      <Eye className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setShowPassportModal(true)}
-                    className="mt-3 text-sm text-[#3BBCEB] hover:text-[#2A9FD4] transition"
-                  >
-                    Click to view full size
-                  </button>
-                </div>
-              </div>
-
-              <div className="card-premium p-6 mt-4">
-                <h3 className="text-lg font-semibold text-[#4A4C4E] mb-4">Quick Actions</h3>
-                <div className="space-y-3">
-                  <button className="w-full btn-primary text-sm py-2.5 flex items-center justify-center gap-2">
-                    <MailIcon className="w-4 h-4" />
-                    Send Email
-                  </button>
-                  <button 
-                    onClick={handleGenerateReport}
-                    disabled={generating}
-                    className="w-full btn-outline text-sm py-2.5 flex items-center justify-center gap-2"
-                  >
-                    {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <BarChart3 className="w-4 h-4" />}
-                    Generate Report
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'payments' && (
-          <div className="card-premium p-6">
-            <div className="flex items-center justify-between mb-6">
+      {/* Main Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column - 2/3 */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Personal Information */}
+          <div className="card-premium p-4 sm:p-6">
+            <h2 className="text-base sm:text-lg font-semibold text-[#4A4C4E] mb-4 flex items-center gap-2">
+              <User className="w-4 h-4 sm:w-5 sm:h-5 text-[#4A4C4E]/40" />
+              Personal Information
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <h3 className="text-lg font-semibold text-[#4A4C4E]">Payment History</h3>
-                <p className="text-sm text-[#4A4C4E]/60">All transactions by {partner.firstName}</p>
+                <p className="text-xs sm:text-sm text-[#4A4C4E]/40">Surname</p>
+                <p className="text-sm sm:text-base font-medium text-[#4A4C4E] break-words">{partner.surname}</p>
               </div>
-              <button className="btn-outline text-sm py-2 px-4 flex items-center gap-2">
-                <Download className="w-4 h-4" />
-                Export
-              </button>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-left text-xs font-medium text-[#4A4C4E]/40 uppercase tracking-wider border-b border-[#E5E6E7]">
-                    <th className="pb-3">Reference</th>
-                    <th className="pb-3">Amount</th>
-                    <th className="pb-3">Method</th>
-                    <th className="pb-3">Date</th>
-                    <th className="pb-3">Status</th>
-                    <th className="pb-3 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#E5E6E7]">
-                  {payments.length === 0 ? (
-                    <tr>
-                      <td colSpan="6" className="py-8 text-center text-[#4A4C4E]/40">
-                        No payments found
-                      </td>
-                    </tr>
+              <div>
+                <p className="text-xs sm:text-sm text-[#4A4C4E]/40">First Name</p>
+                <p className="text-sm sm:text-base font-medium text-[#4A4C4E] break-words">{partner.firstName}</p>
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm text-[#4A4C4E]/40">Email</p>
+                <p className="text-sm sm:text-base font-medium text-[#4A4C4E] break-all">{partner.email}</p>
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm text-[#4A4C4E]/40">Phone</p>
+                <p className="text-sm sm:text-base font-medium text-[#4A4C4E] break-words">{partner.phone || 'Not provided'}</p>
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm text-[#4A4C4E]/40">Gender</p>
+                <p className="text-sm sm:text-base font-medium text-[#4A4C4E] break-words">{partner.gender || 'Not specified'}</p>
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm text-[#4A4C4E]/40">Occupation</p>
+                <p className="text-sm sm:text-base font-medium text-[#4A4C4E] break-words">{partner.occupation || 'Not specified'}</p>
+              </div>
+              <div className="sm:col-span-2">
+                <p className="text-xs sm:text-sm text-[#4A4C4E]/40">Address</p>
+                <p className="text-sm sm:text-base font-medium text-[#4A4C4E] break-words">{partner.address || 'Not provided'}</p>
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm text-[#4A4C4E]/40">Joined</p>
+                <p className="text-sm sm:text-base font-medium text-[#4A4C4E] break-words">
+                  {new Date(partner.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm text-[#4A4C4E]/40">Status</p>
+                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(partner.status)}`}>
+                  {partner.status === 'active' ? (
+                    <CheckCircle className="w-3.5 h-3.5" />
                   ) : (
-                    payments.map((payment) => (
+                    <XCircle className="w-3.5 h-3.5" />
+                  )}
+                  {partner.status.charAt(0).toUpperCase() + partner.status.slice(1)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Payment History */}
+          <div className="card-premium p-4 sm:p-6">
+            <h2 className="text-base sm:text-lg font-semibold text-[#4A4C4E] mb-4 flex items-center gap-2">
+              <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-[#4A4C4E]/40" />
+              Payment History
+            </h2>
+            {payments.length === 0 ? (
+              <p className="text-center text-[#4A4C4E]/40 text-sm py-4">No payments recorded</p>
+            ) : (
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <table className="w-full min-w-[400px] sm:min-w-0">
+                  <thead>
+                    <tr className="text-left text-[10px] sm:text-xs font-medium text-[#4A4C4E]/40 uppercase tracking-wider border-b border-[#E5E6E7]">
+                      <th className="pb-2 sm:pb-3 pr-2 sm:pr-4 font-medium">Reference</th>
+                      <th className="pb-2 sm:pb-3 px-2 sm:px-4 font-medium">Amount</th>
+                      <th className="pb-2 sm:pb-3 px-2 sm:px-4 font-medium hidden sm:table-cell">Method</th>
+                      <th className="pb-2 sm:pb-3 px-2 sm:px-4 font-medium hidden md:table-cell">Date</th>
+                      <th className="pb-2 sm:pb-3 pl-2 sm:pl-4 font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E5E6E7]">
+                    {payments.map((payment) => (
                       <tr key={payment.id} className="hover:bg-[#F5F6F7] transition-colors">
-                        <td className="py-3 text-sm font-mono text-[#4A4C4E]/60">{payment.reference}</td>
-                        <td className="py-3 text-sm font-semibold text-[#4A4C4E]">₦{payment.amount.toLocaleString()}</td>
-                        <td className="py-3 text-sm text-[#4A4C4E]/60">{payment.method || 'Card'}</td>
-                        <td className="py-3 text-sm text-[#4A4C4E]/60">{payment.date}</td>
-                        <td className="py-3">
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(payment.status)}`}>
-                            {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                        <td className="py-2 sm:py-3 pr-2 sm:pr-4">
+                          <p className="text-[10px] sm:text-sm font-mono text-[#4A4C4E]/60 truncate max-w-[80px] sm:max-w-[120px]">
+                            {payment.reference}
+                          </p>
+                        </td>
+                        <td className="py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-[#4A4C4E] whitespace-nowrap">
+                          ₦{payment.amount.toLocaleString()}
+                        </td>
+                        <td className="py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm text-[#4A4C4E]/60 hidden sm:table-cell break-words">
+                          {payment.method || 'N/A'}
+                        </td>
+                        <td className="py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm text-[#4A4C4E]/60 hidden md:table-cell whitespace-nowrap">
+                          {new Date(payment.date).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}
+                        </td>
+                        <td className="py-2 sm:py-3 pl-2 sm:pl-4">
+                          <span className={`inline-flex items-center gap-1 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium border ${getPaymentStatusColor(payment.status)} whitespace-nowrap`}>
+                            {payment.status === 'success' && <CheckCircle className="w-3 h-3" />}
+                            {payment.status === 'pending' && <Clock className="w-3 h-3" />}
+                            {payment.status === 'failed' && <XCircle className="w-3 h-3" />}
+                            <span className="hidden xs:inline">{payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}</span>
                           </span>
                         </td>
-                        <td className="py-3 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button 
-                              onClick={() => handleViewReceipt(payment.id)}
-                              className="p-1.5 hover:bg-[#F5F6F7] rounded-lg transition-colors"
-                              title="View receipt"
-                            >
-                              <Eye className="w-4 h-4 text-[#4A4C4E]/40 hover:text-[#E51913]" />
-                            </button>
-                            {payment.status === 'success' && (
-                              <button 
-                                onClick={() => handleDownloadReceipt(payment.id)}
-                                className="p-1.5 hover:bg-[#F5F6F7] rounded-lg transition-colors"
-                                title="Download receipt"
-                              >
-                                <Download className="w-4 h-4 text-[#4A4C4E]/40 hover:text-[#3BBCEB]" />
-                              </button>
-                            )}
-                          </div>
-                        </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column - 1/3 */}
+        <div className="space-y-6">
+          {/* Partnership Details */}
+          <div className="card-premium p-4 sm:p-6">
+            <h2 className="text-base sm:text-lg font-semibold text-[#4A4C4E] mb-4 flex items-center gap-2">
+              <Building className="w-4 h-4 sm:w-5 sm:h-5 text-[#4A4C4E]/40" />
+              Partnership
+            </h2>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-xs sm:text-sm text-[#4A4C4E]/60">Partnership Type</span>
+                <span className="text-sm font-semibold text-[#4A4C4E] break-words max-w-[140px] sm:max-w-none text-right">
+                  {partner.partnershipType || 'Standard'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs sm:text-sm text-[#4A4C4E]/60">Monthly Commitment</span>
+                <span className="text-sm font-semibold text-[#4A4C4E] whitespace-nowrap">
+                  ₦{partner.monthlyCommitment?.toLocaleString() || '0'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs sm:text-sm text-[#4A4C4E]/60">Total Given</span>
+                <span className="text-sm font-semibold text-[#4A4C4E] whitespace-nowrap">
+                  ₦{partner.totalGiven?.toLocaleString() || '0'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs sm:text-sm text-[#4A4C4E]/60">Joined</span>
+                <span className="text-sm font-medium text-[#4A4C4E] whitespace-nowrap">
+                  {new Date(partner.createdAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </span>
+              </div>
             </div>
           </div>
-        )}
+
+          {/* Quick Actions */}
+          <div className="card-premium p-4 sm:p-6">
+            <h2 className="text-base sm:text-lg font-semibold text-[#4A4C4E] mb-4 flex items-center gap-2">
+              <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-[#4A4C4E]/40" />
+              Quick Actions
+            </h2>
+            <div className="space-y-2">
+              <button
+                onClick={() => setShowEmailModal(true)}
+                className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#F5F6F7] hover:bg-[#E51913]/10 transition text-sm font-medium text-[#4A4C4E] hover:text-[#E51913]"
+              >
+                <Send className="w-4 h-4" />
+                Send Email
+              </button>
+              <button
+                onClick={() => router.push(`/admin/reports/generate?partnerId=${partner.id}`)}
+                className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#F5F6F7] hover:bg-[#E51913]/10 transition text-sm font-medium text-[#4A4C4E] hover:text-[#E51913]"
+              >
+                <FileText className="w-4 h-4" />
+                Generate Report
+              </button>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(partner.email);
+                  // Show a quick feedback
+                }}
+                className="w-full flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#F5F6F7] hover:bg-[#E51913]/10 transition text-sm font-medium text-[#4A4C4E] hover:text-[#E51913]"
+              >
+                <Copy className="w-4 h-4" />
+                Copy Email
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Email Modal */}
+      {showEmailModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-[#E5E6E7]">
+              <h2 className="text-xl font-bold text-[#4A4C4E] flex items-center gap-2">
+                <Send className="w-5 h-5 text-[#E51913]" />
+                Send Email to {partner.firstName}
+              </h2>
+              <p className="text-sm text-[#4A4C4E]/60 mt-1 break-words">{partner.email}</p>
+            </div>
+
+            <form onSubmit={handleSendEmail} className="p-6 space-y-4">
+              {emailError && (
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span className="break-words">{emailError}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-[#4A4C4E] mb-1.5">
+                  Subject <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  className="input-premium"
+                  value={emailData.subject}
+                  onChange={(e) => setEmailData({ ...emailData, subject: e.target.value })}
+                  placeholder="Enter email subject"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#4A4C4E] mb-1.5">
+                  Message <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  className="input-premium min-h-[150px] resize-y"
+                  value={emailData.message}
+                  onChange={(e) => setEmailData({ ...emailData, message: e.target.value })}
+                  placeholder="Write your email message..."
+                  required
+                />
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                <button
+                  type="submit"
+                  disabled={sendingEmail}
+                  className="btn-primary flex-1 justify-center"
+                >
+                  {sendingEmail ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      Send Email
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEmailModal(false);
+                    setEmailError('');
+                  }}
+                  className="btn-outline flex-1 justify-center"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

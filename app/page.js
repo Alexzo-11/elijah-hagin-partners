@@ -99,13 +99,7 @@ export default function Home() {
         damping: 10,
       },
     },
-  };
-
-  return (
-    <main className="min-h-screen">
-      <Navbar transparent={true} />
-      {/* Navbar */}
-      // Find the Navbar section and update it
+  };// Find the Navbar section and update it
 
 {/* Navbar - Fixed version */}
 <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
