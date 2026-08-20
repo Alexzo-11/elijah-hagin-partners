@@ -66,15 +66,15 @@ export async function GET(request) {
       recentPayments.map(async (payment) => {
         let partnerName = 'Unknown Partner';
         let partnerEmail = 'No email';
-        let partnerId = null;
 
         if (payment.partnerId) {
           try {
             const partner = await Partner.findById(payment.partnerId);
             if (partner) {
-              partnerName = `${partner.firstName || ''} ${partner.surname || ''}`.trim() || 'Unknown Partner';
+              const firstName = partner.firstName || '';
+              const surname = partner.surname || '';
+              partnerName = `${firstName} ${surname}`.trim() || 'Unknown Partner';
               partnerEmail = partner.email || 'No email';
-              partnerId = partner._id;
             }
           } catch (err) {
             console.error('Error fetching partner:', err);
@@ -85,7 +85,6 @@ export async function GET(request) {
           id: payment._id,
           partner: partnerName,
           email: partnerEmail,
-          partnerId: partnerId,
           reference: payment.reference || 'N/A',
           amount: payment.amount || 0,
           method: payment.method || 'N/A',

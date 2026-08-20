@@ -11,24 +11,17 @@ import {
   TrendingDown,
   ArrowUpRight,
   ArrowDownRight,
-  Eye,
   Clock,
   CheckCircle,
   XCircle,
   Loader2,
   Search,
-  Filter,
-  Calendar,
-  Download,
-  RefreshCw,
   ChevronLeft,
   ChevronRight,
   User,
   Mail,
-  Phone,
   Building,
   Activity,
-  PieChart,
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -39,7 +32,6 @@ export default function AdminDashboard() {
     activePartners: 0,
     newPartners: 0,
     totalRevenue: 0,
-    averageDonation: 0,
     monthlyGrowth: 0,
     pendingPayments: 0,
   });
@@ -174,6 +166,15 @@ export default function AdminDashboard() {
       color: 'text-purple-600',
       bg: 'bg-purple-50'
     },
+    {
+      title: 'Pending Payments',
+      value: stats.pendingPayments?.toLocaleString() || '0',
+      icon: Clock,
+      change: 'Awaiting confirmation',
+      changeType: 'neutral',
+      color: 'text-amber-600',
+      bg: 'bg-amber-50'
+    },
   ];
 
   return (
@@ -185,22 +186,6 @@ export default function AdminDashboard() {
           <p className="text-sm sm:text-base text-[#4A4C4E]/60">
             Welcome back, {user?.firstName || user?.name || 'Admin'}!
           </p>
-        </div>
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-          <button
-            onClick={fetchDashboardData}
-            className="text-xs sm:text-sm py-1.5 sm:py-2.5 px-3 sm:px-5 rounded-xl bg-[#F5F6F7] hover:bg-[#E5E6E7] transition flex items-center gap-2 text-[#4A4C4E]"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Refresh
-          </button>
-          <Link
-            href="/admin/reports"
-            className="btn-primary text-xs sm:text-sm py-1.5 sm:py-2.5 px-3 sm:px-5"
-          >
-            <Download className="w-4 h-4" />
-            Export Report
-          </Link>
         </div>
       </div>
 
@@ -284,13 +269,12 @@ export default function AdminDashboard() {
                 <th className="pb-2 sm:pb-3 px-2 sm:px-4 font-medium hidden md:table-cell">Method</th>
                 <th className="pb-2 sm:pb-3 px-2 sm:px-4 font-medium hidden lg:table-cell">Date</th>
                 <th className="pb-2 sm:pb-3 pl-2 sm:pl-4 font-medium">Status</th>
-                <th className="pb-2 sm:pb-3 pl-2 sm:pl-4 font-medium text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E5E6E7]">
               {paginatedPayments.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="py-4 sm:py-8 text-center text-[#4A4C4E]/40 text-sm">
+                  <td colSpan="6" className="py-4 sm:py-8 text-center text-[#4A4C4E]/40 text-sm">
                     No transactions found
                   </td>
                 </tr>
@@ -328,14 +312,6 @@ export default function AdminDashboard() {
                         {getStatusIcon(payment.status)}
                         {getStatusLabel(payment.status)}
                       </span>
-                    </td>
-                    <td className="py-2 sm:py-3 pl-2 sm:pl-4 text-right">
-                      <Link
-                        href={`/admin/payments/${payment.id}`}
-                        className="text-[#4A4C4E]/40 hover:text-[#E51913] transition p-1 inline-block"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Link>
                     </td>
                   </tr>
                 ))

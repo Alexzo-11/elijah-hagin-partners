@@ -7,32 +7,25 @@ import Partner from '@/models/Partner';
 export async function POST(request) {
   try {
     const user = await getAuthUser();
-    
     if (!user) {
       return NextResponse.json(
-        { error: 'Unauthorized - Please log in' },
+        { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const { amount, purpose } = await request.json();
+    const { amount, email, paymentMethod } = await request.json();
 
-    if (!amount || amount < 1) {
+    if (!amount || amount < 100) {
       return NextResponse.json(
-        { error: 'Valid amount is required (minimum ₦1)' },
-        { status: 400 }
-      );
-    }
-
-    if (purpose !== 'Monthly Partnership') {
-      return NextResponse.json(
-        { error: 'Only Monthly Partnership payments are accepted' },
+        { error: 'Amount must be at least ₦100' },
         { status: 400 }
       );
     }
 
     await connectToDatabase();
 
+    // Get partner
     const partner = await Partner.findById(user.id);
     if (!partner) {
       return NextResponse.json(
@@ -42,79 +35,63 @@ export async function POST(request) {
     }
 
     // Generate unique reference
-    const reference = `PAY-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    const reference = `EXO-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 
-    // Create payment record with pending status
+    // Create payment record with 'pending' status
     const payment = new Payment({
-      partner: partner._id,
-      amount,
-      reference,
-      status: 'pending',
-      method: 'card',
-      purpose: 'Monthly Partnership',
-      paidAt: null,
-      receiptNumber: null,
+      partnerId: partner._id,
+      partnerEmail: partner.email,
+      reference: reference,
+      amount: amount,
+      status: 'pending', // Start as pending
+      method: paymentMethod || 'paystack',
+      createdAt: new Date(),
     });
 
     await payment.save();
 
-    const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
-    
-    if (!PAYSTACK_SECRET_KEY || PAYSTACK_SECRET_KEY === 'sk_test_...') {
-      console.log('⚠️ Paystack not configured. Using demo mode.');
-      
-      return NextResponse.json({
-        success: true,
-        authorization_url: `${process.env.APP_URL}/partner/payments/success?reference=${reference}&demo=true`,
-        reference,
-        demo: true,
-        message: 'Using demo mode (Paystack not configured)',
-      });
-    }
-
-    try {
-      const paystack = (await import('paystack')).default;
-      const paystackInstance = paystack(PAYSTACK_SECRET_KEY);
-
-      const response = await paystackInstance.transaction.initialize({
-        amount: amount * 100,
-        email: partner.email,
-        reference,
-        callback_url: `${process.env.APP_URL}/partner/payments/success`,
+    // Initialize Paystack transaction
+    const paystackResponse = await fetch('https://api.paystack.co/transaction/initialize', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: email || partner.email,
+        amount: amount * 100, // Convert to kobo
+        reference: reference,
+        callback_url: `${process.env.NEXTAUTH_URL}/partner/payments/success?reference=${reference}`,
         metadata: {
-          paymentId: payment._id.toString(),
           partnerId: partner._id.toString(),
+          partnerEmail: partner.email,
         },
-      });
+      }),
+    });
 
-      if (!response.status) {
-        throw new Error(response.message || 'Paystack initialization failed');
-      }
+    const paystackData = await paystackResponse.json();
 
-      return NextResponse.json({
-        success: true,
-        authorization_url: response.data.authorization_url,
-        reference,
-      });
-    } catch (paystackError) {
-      console.error('Paystack error:', paystackError);
-      
-      const demoReference = `PAY-DEMO-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-      payment.reference = demoReference;
+    if (!paystackData.status) {
+      // If Paystack fails, mark payment as failed
+      payment.status = 'failed';
       await payment.save();
 
-      return NextResponse.json({
-        success: true,
-        authorization_url: `${process.env.APP_URL}/partner/payments/success?reference=${demoReference}&demo=true`,
-        reference: demoReference,
-        demo: true,
-        message: 'Using demo mode (Paystack not configured)',
-      });
+      return NextResponse.json(
+        { error: paystackData.message || 'Failed to initialize payment' },
+        { status: 400 }
+      );
     }
+
+    return NextResponse.json({
+      success: true,
+      authorization_url: paystackData.data.authorization_url,
+      reference: reference,
+      paymentId: payment._id,
+    });
   } catch (error) {
     console.error('Payment initialization error:', error);
     return NextResponse.json(
-      { error: error.message || 'Payment initialization failed' },
+      { error: error.message || 'Failed to initialize payment' },
       { status: 500 }
     );
   }

@@ -4,7 +4,7 @@ import { connectToDatabase } from '@/lib/mongodb';
 import Payment from '@/models/Payment';
 import Partner from '@/models/Partner';
 
-export async function POST(request) {
+export async function GET(request) {
   try {
     const user = await getAuthUser();
     if (!user) {
@@ -14,7 +14,8 @@ export async function POST(request) {
       );
     }
 
-    const { reference } = await request.json();
+    const { searchParams } = new URL(request.url);
+    const reference = searchParams.get('reference');
 
     if (!reference) {
       return NextResponse.json(
@@ -25,7 +26,7 @@ export async function POST(request) {
 
     await connectToDatabase();
 
-    // Find the payment
+    // Find payment
     const payment = await Payment.findOne({ reference });
     if (!payment) {
       return NextResponse.json(
@@ -34,136 +35,67 @@ export async function POST(request) {
       );
     }
 
-    // Get partner details
-    const partner = await Partner.findById(payment.partner);
-    if (!partner) {
-      return NextResponse.json(
-        { error: 'Partner not found' },
-        { status: 404 }
-      );
-    }
+    // Verify with Paystack
+    const paystackResponse = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
+      headers: {
+        'Authorization': `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+      },
+    });
 
-    // Check if it's a demo payment
-    if (reference.includes('DEMO')) {
-      const receiptNumber = `RCP-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-      
+    const paystackData = await paystackResponse.json();
+
+    if (paystackData.status && paystackData.data.status === 'success') {
+      // Update payment to success
       payment.status = 'success';
       payment.paidAt = new Date();
-      payment.receiptNumber = receiptNumber;
-      
-      // Update partner
+      payment.paymentData = paystackData.data;
+      await payment.save();
+
+      // Update partner's total giving
+      const partner = await Partner.findById(payment.partnerId);
       if (partner) {
-        partner.totalContributed = (partner.totalContributed || 0) + payment.amount;
-        partner.lastPaymentDate = new Date();
+        partner.totalGiven = (partner.totalGiven || 0) + payment.amount;
         await partner.save();
       }
-      
+
+      return NextResponse.json({
+        success: true,
+        status: 'success',
+        payment: {
+          id: payment._id,
+          amount: payment.amount,
+          reference: payment.reference,
+          status: payment.status,
+        },
+      });
+    } else if (paystackData.data && paystackData.data.status === 'pending') {
+      payment.status = 'pending';
       await payment.save();
 
       return NextResponse.json({
         success: true,
+        status: 'pending',
         payment: {
           id: payment._id,
-          reference: payment.reference,
-          status: 'success',
           amount: payment.amount,
-          receiptNumber: payment.receiptNumber,
-          createdAt: payment.createdAt,
-          purpose: payment.purpose,
-          method: payment.method,
-          partnerName: `${partner.firstName} ${partner.surname}`,
-          partnerEmail: partner.email,
-          partnerPhone: partner.phone || 'N/A',
-          partnershipType: partner.partnershipType || 'SILVER',
-          address: partner.residentialAddress || 'N/A',
+          reference: payment.reference,
+          status: payment.status,
         },
-        demo: true,
       });
-    }
-
-    // Verify with Paystack
-    try {
-      // Dynamic import for Paystack
-      const paystack = (await import('paystack')).default;
-      const paystackInstance = paystack(process.env.PAYSTACK_SECRET_KEY);
-
-      const response = await paystackInstance.transaction.verify(reference);
-
-      if (!response.status) {
-        throw new Error(response.message || 'Verification failed');
-      }
-
-      const paymentData = response.data;
-
-      if (paymentData.status === 'success') {
-        const receiptNumber = `RCP-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-        
-        payment.status = 'success';
-        payment.paidAt = new Date(paymentData.paid_at);
-        payment.receiptNumber = receiptNumber;
-
-        // Update partner total contributions
-        if (partner) {
-          partner.totalContributed = (partner.totalContributed || 0) + payment.amount;
-          partner.lastPaymentDate = new Date();
-          await partner.save();
-        }
-
-        await payment.save();
-
-        return NextResponse.json({
-          success: true,
-          payment: {
-            id: payment._id,
-            reference: payment.reference,
-            status: 'success',
-            amount: payment.amount,
-            receiptNumber: payment.receiptNumber,
-            createdAt: payment.createdAt,
-            purpose: payment.purpose,
-            method: payment.method,
-            partnerName: `${partner.firstName} ${partner.surname}`,
-            partnerEmail: partner.email,
-            partnerPhone: partner.phone || 'N/A',
-            partnershipType: partner.partnershipType || 'SILVER',
-            address: partner.residentialAddress || 'N/A',
-          },
-        });
-      } else {
-        // Payment failed
-        payment.status = 'failed';
-        await payment.save();
-
-        return NextResponse.json({
-          success: false,
-          error: 'Payment verification failed',
-          payment: {
-            id: payment._id,
-            reference: payment.reference,
-            status: 'failed',
-            amount: payment.amount,
-          },
-        });
-      }
-    } catch (paystackError) {
-      console.error('Paystack verification error:', paystackError);
-      
-      // If Paystack verification fails, mark as failed
+    } else {
       payment.status = 'failed';
       await payment.save();
 
-      return NextResponse.json(
-        { 
-          error: 'Payment verification failed', 
-          details: paystackError.message 
-        },
-        { status: 500 }
-      );
+      return NextResponse.json({
+        success: false,
+        status: 'failed',
+        error: 'Payment verification failed',
+      });
     }
   } catch (error) {
     console.error('Payment verification error:', error);
     return NextResponse.json(
-      { error: 'Failed to verify payment: ' + error.message },
+      { error: error.message || 'Failed to verify payment' },
       { status: 500 }
     );
   }
