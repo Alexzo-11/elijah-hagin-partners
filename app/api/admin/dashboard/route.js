@@ -29,51 +29,63 @@ export async function GET(request) {
       new Date(p.createdAt) >= startOfMonth
     ).length;
 
-    // Get all payments
-    const payments = await Payment.find({});
-    const totalRevenue = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+    // Get all successful payments ONLY
+    const successfulPayments = await Payment.find({ status: 'success' });
     
-    // Calculate average donation
-    const averageDonation = payments.length > 0 ? totalRevenue / payments.length : 0;
+    // Calculate total revenue from successful payments only
+    const totalRevenue = successfulPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
     
-    // Get pending payments
-    const pendingPayments = payments.filter(p => p.status === 'pending').length;
+    // Get pending payments count
+    const pendingPayments = await Payment.countDocuments({ status: 'pending' });
 
-    // Get monthly growth (compare this month to last month)
+    // Get monthly growth from successful payments
     const startOfLastMonth = new Date();
     startOfLastMonth.setMonth(startOfLastMonth.getMonth() - 1);
     startOfLastMonth.setDate(1);
     startOfLastMonth.setHours(0, 0, 0, 0);
     
-    const thisMonthRevenue = payments
+    const thisMonthRevenue = successfulPayments
       .filter(p => new Date(p.createdAt) >= startOfMonth)
       .reduce((sum, p) => sum + (p.amount || 0), 0);
       
-    const lastMonthRevenue = payments
+    const lastMonthRevenue = successfulPayments
       .filter(p => new Date(p.createdAt) >= startOfLastMonth && new Date(p.createdAt) < startOfMonth)
       .reduce((sum, p) => sum + (p.amount || 0), 0);
 
     const monthlyGrowth = lastMonthRevenue > 0 
       ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue * 100)
-      : 0;
+      : thisMonthRevenue > 0 ? 100 : 0;
 
-    // Get recent payments with partner details
+    // Get recent payments with partner details populated
     const recentPayments = await Payment.find({})
       .sort({ createdAt: -1 })
-      .limit(15)
-      .lean();
+      .limit(15);
 
-    // Populate partner details
+    // Populate partner details for each payment
     const populatedPayments = await Promise.all(
       recentPayments.map(async (payment) => {
-        let partner = null;
+        let partnerName = 'Unknown Partner';
+        let partnerEmail = 'No email';
+        let partnerId = null;
+
         if (payment.partnerId) {
-          partner = await Partner.findById(payment.partnerId);
+          try {
+            const partner = await Partner.findById(payment.partnerId);
+            if (partner) {
+              partnerName = `${partner.firstName || ''} ${partner.surname || ''}`.trim() || 'Unknown Partner';
+              partnerEmail = partner.email || 'No email';
+              partnerId = partner._id;
+            }
+          } catch (err) {
+            console.error('Error fetching partner:', err);
+          }
         }
+
         return {
           id: payment._id,
-          partner: partner ? `${partner.firstName} ${partner.surname}` : 'Unknown Partner',
-          email: partner?.email || 'No email',
+          partner: partnerName,
+          email: partnerEmail,
+          partnerId: partnerId,
           reference: payment.reference || 'N/A',
           amount: payment.amount || 0,
           method: payment.method || 'N/A',
@@ -104,7 +116,6 @@ export async function GET(request) {
         activePartners,
         newPartners,
         totalRevenue: Math.round(totalRevenue),
-        averageDonation: Math.round(averageDonation),
         monthlyGrowth: Math.round(monthlyGrowth * 10) / 10,
         pendingPayments,
       },

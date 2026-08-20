@@ -3,6 +3,7 @@ import { getAuthUser } from '@/lib/auth';
 import { connectToDatabase } from '@/lib/mongodb';
 import Partner from '@/models/Partner';
 import Payment from '@/models/Payment';
+import mongoose from 'mongoose';
 
 export async function GET(request, { params }) {
   try {
@@ -16,9 +17,10 @@ export async function GET(request, { params }) {
 
     const { id } = params;
 
-    if (!id) {
+    // Validate ObjectId
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
-        { error: 'Partner ID is required' },
+        { error: 'Invalid partner ID format' },
         { status: 400 }
       );
     }
@@ -35,10 +37,16 @@ export async function GET(request, { params }) {
       );
     }
 
-    // Get partner's payments
-    const payments = await Payment.find({ partnerId: id })
-      .sort({ createdAt: -1 })
-      .limit(10);
+    // Get partner's payments (successful only for total)
+    const allPayments = await Payment.find({ 
+      partnerId: id 
+    }).sort({ createdAt: -1 });
+
+    const successfulPayments = allPayments.filter(p => p.status === 'success');
+    const totalGiven = successfulPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+
+    // Get recent payments (last 10)
+    const recentPayments = allPayments.slice(0, 10);
 
     // Format partner data
     const formattedPartner = {
@@ -53,12 +61,12 @@ export async function GET(request, { params }) {
       status: partner.status || 'inactive',
       partnershipType: partner.partnershipType || 'Standard',
       monthlyCommitment: partner.monthlyCommitment || 0,
-      totalGiven: partner.totalGiven || 0,
+      totalGiven: Math.round(totalGiven),
       createdAt: partner.createdAt,
       updatedAt: partner.updatedAt,
     };
 
-    const formattedPayments = payments.map(p => ({
+    const formattedPayments = recentPayments.map(p => ({
       id: p._id,
       reference: p.reference || 'N/A',
       amount: p.amount || 0,
@@ -75,66 +83,6 @@ export async function GET(request, { params }) {
     console.error('Error fetching partner:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to fetch partner' },
-      { status: 500 }
-    );
-  }
-}
-
-// PUT - Update partner
-export async function PUT(request, { params }) {
-  try {
-    const user = await getAuthUser();
-    if (!user || user.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const { id } = params;
-    const body = await request.json();
-
-    await connectToDatabase();
-
-    const partner = await Partner.findById(id);
-    if (!partner) {
-      return NextResponse.json(
-        { error: 'Partner not found' },
-        { status: 404 }
-      );
-    }
-
-    // Update fields
-    const allowedFields = [
-      'firstName', 'surname', 'email', 'phone', 'gender', 
-      'occupation', 'address', 'status', 'partnershipType',
-      'monthlyCommitment'
-    ];
-
-    allowedFields.forEach(field => {
-      if (body[field] !== undefined) {
-        partner[field] = body[field];
-      }
-    });
-
-    await partner.save();
-
-    return NextResponse.json({
-      success: true,
-      message: 'Partner updated successfully',
-      partner: {
-        id: partner._id,
-        firstName: partner.firstName,
-        surname: partner.surname,
-        email: partner.email,
-        phone: partner.phone,
-        status: partner.status,
-      },
-    });
-  } catch (error) {
-    console.error('Error updating partner:', error);
-    return NextResponse.json(
-      { error: error.message || 'Failed to update partner' },
       { status: 500 }
     );
   }

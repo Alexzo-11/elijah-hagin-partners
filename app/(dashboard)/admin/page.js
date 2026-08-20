@@ -174,15 +174,6 @@ export default function AdminDashboard() {
       color: 'text-purple-600',
       bg: 'bg-purple-50'
     },
-    {
-      title: 'Avg Donation',
-      value: `₦${stats.averageDonation?.toLocaleString() || '0'}`,
-      icon: CreditCard,
-      change: `${stats.pendingPayments || 0} pending`,
-      changeType: 'neutral',
-      color: 'text-indigo-600',
-      bg: 'bg-indigo-50'
-    }
   ];
 
   return (
